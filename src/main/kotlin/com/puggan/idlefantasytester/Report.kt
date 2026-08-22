@@ -31,6 +31,10 @@ object Report {
             if (step.stoppedBecause.startsWith("no XP") || step.stoppedBecause.startsWith("hit the")) {
                 println("       ! ${step.stoppedBecause}")
             }
+            // A respec changes the bonuses mid-plan; the header alone would mislead.
+            if (step.step.prestige != null) {
+                println("       respec: ${step.bonuses.describe().joinToString(", ")}")
+            }
             // A "best" step walks up several activities; break down where its time went.
             if (step.activities.size > 1) {
                 step.activities.forEach { use ->
@@ -101,8 +105,10 @@ object Report {
         val days = minutes / 1440
         val hours = (minutes % 1440) / 60
         val mins = minutes % 60
+        // Minutes stay visible at every scale: plans separated by under an hour are
+        // exactly the comparisons this tool exists to make.
         return when {
-            days > 0  -> "${days}d ${hours}h"
+            days > 0  -> "${days}d ${hours}h ${mins}m"
             hours > 0 -> "${hours}h ${mins}m"
             else      -> "${mins}m"
         }

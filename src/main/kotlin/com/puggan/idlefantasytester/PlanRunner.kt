@@ -24,6 +24,8 @@ object PlanRunner {
         val elapsedMs: Long,
         /** Which stop condition ended the step. */
         val stoppedBecause: String,
+        /** Bonuses in force for this step; differs from the plan's when it respecs. */
+        val bonuses: Bonuses,
     ) {
         val xpGained: Long get() = xpBySkill.values.sum()
     }
@@ -62,15 +64,20 @@ object PlanRunner {
         val state = PlayerState.from(plan)
         val startLevels = state.skills.associateWith { state.levelOf(it) }
         val random = Random(plan.seed)
+        // Per step, not per skill: a step may respec the tree partway through a plan.
         val bonusesBySkill = plan.steps.map { it.skill }.distinct()
             .associateWith { Bonuses(plan.loadout, it) }
+        val bonusesByStep = plan.steps.associateWith { step ->
+            val loadout = step.prestige?.let { plan.loadout.copy(prestige = it) } ?: plan.loadout
+            Bonuses(loadout, step.skill)
+        }
         // In-game wall clock across the whole plan; timed buffs are measured against it.
         var clockMs = 0L
 
         val results = plan.steps.map { step ->
             val runner = SkillRunner.forSkill(step.skill)
                 ?: error("skill '${step.skill}' is not implemented yet")
-            val bonuses = bonusesBySkill.getValue(step.skill)
+            val bonuses = bonusesByStep.getValue(step)
 
             val levelBefore = state.levelOf(step.skill)
             val cap = step.sessions ?: SESSION_SAFETY_CAP
@@ -134,6 +141,7 @@ object PlanRunner {
                 levelAfter     = state.levelOf(step.skill),
                 elapsedMs      = elapsedMs,
                 stoppedBecause = stopped,
+                bonuses        = bonuses,
             )
         }
 

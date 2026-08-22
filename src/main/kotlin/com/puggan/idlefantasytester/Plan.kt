@@ -48,6 +48,12 @@ data class Plan(
         val floorReductionMin: Double? = null,
         /** Chronos Spire session-duration multiplier, 0.5–1.0. */
         val chronosMultiplier: Float = 1.0f,
+        /**
+         * Replaces the loadout's prestige nodes from this step on, modelling a respec.
+         * The game wipes a skill's nodes wholesale and refunds the points (24h cooldown
+         * per skill), so this replaces rather than adds to what the loadout owns.
+         */
+        val prestige: Map<String, List<String>>? = null,
         /** Free-text note, echoed in the report instead of the generated label. */
         val note: String = "",
     ) {
@@ -79,7 +85,9 @@ data class Plan(
     /** Fails fast on plans that would run forever or silently do nothing. */
     private fun validate(fileName: String) {
         require(steps.isNotEmpty()) { "$fileName: plan has no steps" }
+        checkPrestigeNodes(loadout.prestige, "$fileName: loadout")
         steps.forEachIndexed { index, step ->
+            step.prestige?.let { checkPrestigeNodes(it, "$fileName: step ${index + 1}") }
             val where = "$fileName: step ${index + 1} (${step.skill})"
             require(step.target == null || step.course == null) {
                 "$where: set either target or course, not both"
@@ -93,6 +101,24 @@ data class Plan(
                         "Available: ${SkillRunner.available().joinToString(", ")}"
                 )
             runner.validate(step, where)
+        }
+    }
+
+    /**
+     * A misspelt node id is simply not owned, which would quietly cost the plan its
+     * bonus and make a comparison meaningless — so reject it up front.
+     */
+    private fun checkPrestigeNodes(nodes: Map<String, List<String>>, where: String) {
+        nodes.forEach { (skill, ids) ->
+            val tree = GameData.prestigeTrees[skill]
+                ?: error("$where: no prestige tree for skill '$skill'")
+            val known = tree.paths.flatMap { path -> path.nodes.map { it.id } }
+            ids.forEach { id ->
+                require(id in known) {
+                    "$where: unknown prestige node '$id'. " +
+                        "$skill nodes: ${known.joinToString(", ")}"
+                }
+            }
         }
     }
 }
