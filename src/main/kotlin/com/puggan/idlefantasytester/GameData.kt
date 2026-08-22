@@ -12,7 +12,6 @@ import java.io.File
  * simulate against are the ones the tagged build ships.
  */
 object GameData {
-
     const val AGILITY = "agility"
 
     /** Blessings run 24h before Church/Monument bonuses (TownRepository.blessingDurationMs). */
@@ -62,15 +61,15 @@ object GameData {
     @Serializable
     private data class EquipmentEntry(
         val slot: String = "",
-        @SerialName("cape_skill")        val capeSkill: String? = null,
-        @SerialName("cape_bonus")        val capeBonus: Double = 0.0,
+        @SerialName("cape_skill") val capeSkill: String? = null,
+        @SerialName("cape_bonus") val capeBonus: Double = 0.0,
         @SerialName("agility_efficiency") val agilityEfficiency: Float? = null,
         val requirements: Map<String, Int> = emptyMap(),
     )
 
     @Serializable
     private data class PetEntry(
-        @SerialName("effect_type")   val effectType: String = "",
+        @SerialName("effect_type") val effectType: String = "",
         @SerialName("boosted_skill") val boostedSkill: String = "",
         @SerialName("boost_percent") val boostPercent: Int = 0,
     )
@@ -90,16 +89,23 @@ object GameData {
      * Summed XP boost percent [petIds] grant [skill]; pets boosting "all" count for
      * every skill. Additive, as QueuedSessionStarter.gatheringPetBoost has it.
      */
-    fun petBoostPct(petIds: List<String>, skill: String): Int = petIds.sumOf { id ->
-        val pet = pets[id] ?: error("Unknown pet '$id'. Known: ${pets.keys.joinToString(", ")}")
-        if (pet.boostedSkill == skill || pet.boostedSkill == "all") pet.boostPercent else 0
-    }
+    fun petBoostPct(
+        petIds: List<String>,
+        skill: String,
+    ): Int =
+        petIds.sumOf { id ->
+            val pet = pets[id] ?: error("Unknown pet '$id'. Known: ${pets.keys.joinToString(", ")}")
+            if (pet.boostedSkill == skill || pet.boostedSkill == "all") pet.boostPercent else 0
+        }
 
     /**
      * Summed cape bonus for [skill]: the best matching skill cape plus the best
      * matching guild cape, as resolveCapeMultiplier does.
      */
-    fun capeBonusTotal(capeKeys: List<String>, skill: String): Double {
+    fun capeBonusTotal(
+        capeKeys: List<String>,
+        skill: String,
+    ): Double {
         var bestSkill = 0.0
         var bestGuild = 0.0
         capeKeys.forEach { key ->
@@ -127,8 +133,7 @@ object GameData {
      */
     private val TOOL_TIERS = listOf(1, 15, 30, 55, 70, 85)
 
-    private fun tierIndex(level: Int): Int =
-        TOOL_TIERS.indexOfLast { it <= level }.coerceAtLeast(0)
+    private fun tierIndex(level: Int): Int = TOOL_TIERS.indexOfLast { it <= level }.coerceAtLeast(0)
 
     /**
      * Efficiency of [toolKey] used on an activity requiring [activityLevelRequired].
@@ -136,7 +141,10 @@ object GameData {
      * A tool outranking the activity gets +25% per tier of difference, so the same
      * hook is worth more on courses well below it.
      */
-    fun agilityToolEfficiency(toolKey: String, activityLevelRequired: Int): Float {
+    fun agilityToolEfficiency(
+        toolKey: String,
+        activityLevelRequired: Int,
+    ): Float {
         val tool = equipment[toolKey] ?: error("Unknown tool '$toolKey'")
         val base = tool.agilityEfficiency ?: 1.0f
         if (activityLevelRequired <= 0) return base
@@ -152,7 +160,11 @@ object GameData {
      * can make a lower-requirement tool win: the shadow hook (req 40, base 2.5)
      * beats runite (req 85, base 2.25) on any course both can work.
      */
-    fun bestAgilityTool(owned: List<String>, agilityLevel: Int, activityLevelRequired: Int): Pair<String, Float>? =
+    fun bestAgilityTool(
+        owned: List<String>,
+        agilityLevel: Int,
+        activityLevelRequired: Int,
+    ): Pair<String, Float>? =
         owned.filter { key ->
             val tool = equipment[key] ?: error("Unknown tool '$key'")
             require(tool.slot == "grappling_hook") { "'$key' is not a grappling hook" }
@@ -162,8 +174,9 @@ object GameData {
 
     /** XP multiplier of a church blessing, e.g. 1.37 for divine_grace. */
     fun blessingXpMultiplier(key: String): Double {
-        val blessing = blessings[key]
-            ?: error("Unknown blessing '$key'. XP blessings: ${blessings.keys.joinToString(", ")}")
+        val blessing =
+            blessings[key]
+                ?: error("Unknown blessing '$key'. XP blessings: ${blessings.keys.joinToString(", ")}")
         return blessing
     }
 
@@ -179,8 +192,9 @@ object GameData {
         val source = File(gameRoot, "kotlin/com/fantasyidler/repository/ChurchRepository.kt")
         require(source.isFile) { "Missing ${source.path} — is the game submodule checked out?" }
         val pattern = Regex("""BlessingData\(\s*"(\w+)"\s*,\s*\d+\s*,\s*BlessingType\.XP\s*,\s*([\d.]+)f\s*\)""")
-        val found = pattern.findAll(source.readText())
-            .associate { it.groupValues[1] to it.groupValues[2].toDouble() }
+        val found =
+            pattern.findAll(source.readText())
+                .associate { it.groupValues[1] to it.groupValues[2].toDouble() }
         check(found.isNotEmpty()) {
             "Found no XP blessings in ${source.path}. The game's declaration format " +
                 "probably changed — update the pattern in GameData.blessings."

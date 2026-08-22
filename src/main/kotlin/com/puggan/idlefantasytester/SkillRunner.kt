@@ -11,12 +11,14 @@ import kotlin.random.Random
  * `SkillSimulator.simulateX` call wants.
  */
 interface SkillRunner {
-
     /** Skill key as written in plan files. */
     val skill: String
 
     /** Rejects steps this skill can't honour. [where] locates the step for the user. */
-    fun validate(step: Plan.Step, where: String)
+    fun validate(
+        step: Plan.Step,
+        where: String,
+    )
 
     /**
      * Simulates one 60-frame session, reading and advancing nothing itself.
@@ -24,7 +26,12 @@ interface SkillRunner {
      * [bonuses] supplies only the sim-time knobs (pet, endurance floor); award-time
      * multipliers are applied by [PlanRunner], as the game applies them on collect.
      */
-    fun runSession(step: Plan.Step, state: PlayerState, bonuses: Bonuses, random: Random): Session
+    fun runSession(
+        step: Plan.Step,
+        state: PlayerState,
+        bonuses: Bonuses,
+        random: Random,
+    ): Session
 
     /**
      * One simulated session's outcome. XP is a map because combat sessions
@@ -43,9 +50,10 @@ interface SkillRunner {
     }
 
     companion object {
-        private val runners: Map<String, SkillRunner> = listOf(
-            AgilityRunner,
-        ).associateBy { it.skill }
+        private val runners: Map<String, SkillRunner> =
+            listOf(
+                AgilityRunner,
+            ).associateBy { it.skill }
 
         fun forSkill(skill: String): SkillRunner? = runners[skill]
 

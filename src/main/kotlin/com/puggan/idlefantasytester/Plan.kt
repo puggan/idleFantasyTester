@@ -62,10 +62,11 @@ data class Plan(
 
         /** Human-readable label for the report's step column. */
         val label: String
-            get() = note.ifEmpty {
-                val stop = untilLevel?.let { "→ lvl $it" } ?: sessions?.let { "×$it" } ?: "?"
-                "$skill $activity $stop"
-            }
+            get() =
+                note.ifEmpty {
+                    val stop = untilLevel?.let { "→ lvl $it" } ?: sessions?.let { "×$it" } ?: "?"
+                    "$skill $activity $stop"
+                }
     }
 
     companion object {
@@ -95,11 +96,12 @@ data class Plan(
             require(step.untilLevel != null || step.sessions != null) {
                 "$where: needs untilLevel, sessions, or both — otherwise it never ends"
             }
-            val runner = SkillRunner.forSkill(step.skill)
-                ?: error(
-                    "$where: skill '${step.skill}' is not implemented yet. " +
-                        "Available: ${SkillRunner.available().joinToString(", ")}"
-                )
+            val runner =
+                SkillRunner.forSkill(step.skill)
+                    ?: error(
+                        "$where: skill '${step.skill}' is not implemented yet. " +
+                            "Available: ${SkillRunner.available().joinToString(", ")}",
+                    )
             runner.validate(step, where)
         }
     }
@@ -108,10 +110,14 @@ data class Plan(
      * A misspelt node id is simply not owned, which would quietly cost the plan its
      * bonus and make a comparison meaningless — so reject it up front.
      */
-    private fun checkPrestigeNodes(nodes: Map<String, List<String>>, where: String) {
+    private fun checkPrestigeNodes(
+        nodes: Map<String, List<String>>,
+        where: String,
+    ) {
         nodes.forEach { (skill, ids) ->
-            val tree = GameData.prestigeTrees[skill]
-                ?: error("$where: no prestige tree for skill '$skill'")
+            val tree =
+                GameData.prestigeTrees[skill]
+                    ?: error("$where: no prestige tree for skill '$skill'")
             val known = tree.paths.flatMap { path -> path.nodes.map { it.id } }
             ids.forEach { id ->
                 require(id in known) {

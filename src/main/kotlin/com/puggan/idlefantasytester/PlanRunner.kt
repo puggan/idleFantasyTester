@@ -9,7 +9,6 @@ import kotlin.random.Random
  * adding mining means adding a runner, not touching this loop.
  */
 object PlanRunner {
-
     data class StepResult(
         val step: Plan.Step,
         /**
@@ -68,104 +67,108 @@ object PlanRunner {
         val startLevels = state.skills.associateWith { state.levelOf(it) }
         val random = Random(plan.seed)
         // Per step, not per skill: a step may respec the tree partway through a plan.
-        val bonusesBySkill = plan.steps.map { it.skill }.distinct()
-            .associateWith { Bonuses(plan.loadout, it) }
-        val bonusesByStep = plan.steps.associateWith { step ->
-            val loadout = step.prestige?.let { plan.loadout.copy(prestige = it) } ?: plan.loadout
-            Bonuses(loadout, step.skill)
-        }
+        val bonusesBySkill =
+            plan.steps.map { it.skill }.distinct()
+                .associateWith { Bonuses(plan.loadout, it) }
+        val bonusesByStep =
+            plan.steps.associateWith { step ->
+                val loadout = step.prestige?.let { plan.loadout.copy(prestige = it) } ?: plan.loadout
+                Bonuses(loadout, step.skill)
+            }
         // In-game wall clock across the whole plan; timed buffs are measured against it.
         var clockMs = 0L
 
-        val results = plan.steps.map { step ->
-            val runner = SkillRunner.forSkill(step.skill)
-                ?: error("skill '${step.skill}' is not implemented yet")
-            val bonuses = bonusesByStep.getValue(step)
+        val results =
+            plan.steps.map { step ->
+                val runner =
+                    SkillRunner.forSkill(step.skill)
+                        ?: error("skill '${step.skill}' is not implemented yet")
+                val bonuses = bonusesByStep.getValue(step)
 
-            val levelBefore = state.levelOf(step.skill)
-            val cap = step.sessions ?: SESSION_SAFETY_CAP
-            val xpGained = mutableMapOf<String, Long>()
-            val activities = linkedMapOf<String, ActivityUse>()
-            var elapsedMs = 0L
-            var sessionsRun = 0
-            var stopped = step.sessions?.let { "ran all $it sessions" } ?: "stopped"
+                val levelBefore = state.levelOf(step.skill)
+                val cap = step.sessions ?: SESSION_SAFETY_CAP
+                val xpGained = mutableMapOf<String, Long>()
+                val activities = linkedMapOf<String, ActivityUse>()
+                var elapsedMs = 0L
+                var sessionsRun = 0
+                var stopped = step.sessions?.let { "ran all $it sessions" } ?: "stopped"
 
-            while (sessionsRun < cap) {
-                val level = state.levelOf(step.skill)
-                if (step.untilLevel != null && level >= step.untilLevel) {
-                    stopped = "reached level ${step.untilLevel}"
-                    break
-                }
-                if (level >= MAX_LEVEL && step.untilLevel != null && step.untilLevel > MAX_LEVEL) {
-                    stopped = "capped at level $MAX_LEVEL"
-                    break
+                while (sessionsRun < cap) {
+                    val level = state.levelOf(step.skill)
+                    if (step.untilLevel != null && level >= step.untilLevel) {
+                        stopped = "reached level ${step.untilLevel}"
+                        break
+                    }
+                    if (level >= MAX_LEVEL && step.untilLevel != null && step.untilLevel > MAX_LEVEL) {
+                        stopped = "capped at level $MAX_LEVEL"
+                        break
+                    }
+
+                    val session = runner.runSession(step, state, bonuses, random)
+                    // Cape, blessing, prestige xp_pct and the 2x boost land here rather than
+                    // in the sim, matching PlayerRepository.applySessionResults on collect.
+                    val awarded = session.xpBySkill.mapValues { (_, raw) -> bonuses.awardXp(raw, clockMs) }
+                    awarded.forEach { (skill, amount) ->
+                        state.addXp(skill, amount)
+                        xpGained[skill] = (xpGained[skill] ?: 0L) + amount
+                    }
+                    val awardedTotal = awarded.values.sum()
+                    val levelNow = state.levelOf(step.skill)
+                    activities.merge(
+                        session.activity,
+                        ActivityUse(
+                            activity = session.activity,
+                            sessions = 1,
+                            xp = awardedTotal,
+                            elapsedMs = session.durationMs,
+                            levelFrom = level,
+                            levelTo = levelNow,
+                            actionsMin = session.actionsPerMinute,
+                            actionsMax = session.actionsPerMinute,
+                        ),
+                    ) { old, new ->
+                        old.copy(
+                            sessions = old.sessions + new.sessions,
+                            xp = old.xp + new.xp,
+                            elapsedMs = old.elapsedMs + new.elapsedMs,
+                            levelTo = new.levelTo,
+                            actionsMin = minOf(old.actionsMin, new.actionsMin),
+                            actionsMax = maxOf(old.actionsMax, new.actionsMax),
+                        )
+                    }
+                    elapsedMs += session.durationMs
+                    clockMs += session.durationMs
+                    sessionsRun++
+
+                    if (awardedTotal == 0L) {
+                        stopped = "no XP gained — '${session.activity}' yields nothing at this level"
+                        break
+                    }
+                    if (sessionsRun == SESSION_SAFETY_CAP && step.sessions == null) {
+                        stopped = "hit the $SESSION_SAFETY_CAP session safety cap"
+                    }
                 }
 
-                val session = runner.runSession(step, state, bonuses, random)
-                // Cape, blessing, prestige xp_pct and the 2x boost land here rather than
-                // in the sim, matching PlayerRepository.applySessionResults on collect.
-                val awarded = session.xpBySkill.mapValues { (_, raw) -> bonuses.awardXp(raw, clockMs) }
-                awarded.forEach { (skill, amount) ->
-                    state.addXp(skill, amount)
-                    xpGained[skill] = (xpGained[skill] ?: 0L) + amount
-                }
-                val awardedTotal = awarded.values.sum()
-                val levelNow = state.levelOf(step.skill)
-                activities.merge(
-                    session.activity,
-                    ActivityUse(
-                        activity   = session.activity,
-                        sessions   = 1,
-                        xp         = awardedTotal,
-                        elapsedMs  = session.durationMs,
-                        levelFrom  = level,
-                        levelTo    = levelNow,
-                        actionsMin = session.actionsPerMinute,
-                        actionsMax = session.actionsPerMinute,
-                    ),
-                ) { old, new ->
-                    old.copy(
-                        sessions   = old.sessions + new.sessions,
-                        xp         = old.xp + new.xp,
-                        elapsedMs  = old.elapsedMs + new.elapsedMs,
-                        levelTo    = new.levelTo,
-                        actionsMin = minOf(old.actionsMin, new.actionsMin),
-                        actionsMax = maxOf(old.actionsMax, new.actionsMax),
-                    )
-                }
-                elapsedMs += session.durationMs
-                clockMs += session.durationMs
-                sessionsRun++
-
-                if (awardedTotal == 0L) {
-                    stopped = "no XP gained — '${session.activity}' yields nothing at this level"
-                    break
-                }
-                if (sessionsRun == SESSION_SAFETY_CAP && step.sessions == null) {
-                    stopped = "hit the $SESSION_SAFETY_CAP session safety cap"
-                }
+                StepResult(
+                    step = step,
+                    activities = activities.values.toList(),
+                    sessionsRun = sessionsRun,
+                    xpBySkill = xpGained,
+                    levelBefore = levelBefore,
+                    levelAfter = state.levelOf(step.skill),
+                    elapsedMs = elapsedMs,
+                    stoppedBecause = stopped,
+                    bonuses = bonuses,
+                )
             }
 
-            StepResult(
-                step           = step,
-                activities     = activities.values.toList(),
-                sessionsRun    = sessionsRun,
-                xpBySkill      = xpGained,
-                levelBefore    = levelBefore,
-                levelAfter     = state.levelOf(step.skill),
-                elapsedMs      = elapsedMs,
-                stoppedBecause = stopped,
-                bonuses        = bonuses,
-            )
-        }
-
         return Result(
-            plan        = plan,
-            steps       = results,
+            plan = plan,
+            steps = results,
             startLevels = startLevels,
             finalLevels = state.skills.associateWith { state.levelOf(it) },
-            finalXp     = state.snapshot(),
-            bonuses     = bonusesBySkill,
+            finalXp = state.snapshot(),
+            bonuses = bonusesBySkill,
         )
     }
 

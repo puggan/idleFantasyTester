@@ -4,7 +4,6 @@ import com.fantasyidler.simulator.XpTable
 
 /** Renders [PlanRunner.Result]s as plain text: time spent, levels reached, xp rate. */
 object Report {
-
     fun printPlan(result: PlanRunner.Result) {
         val plan = result.plan
         println()
@@ -26,7 +25,7 @@ object Report {
                     formatXp(xpPerHour(step.xpGained, step.elapsedMs)),
                     "${step.levelBefore} → ${step.levelAfter}",
                     formatDuration(step.elapsedMs),
-                )
+                ),
             )
             // Surface surprises only: an unremarkable "ran all N sessions" is noise.
             if (step.stoppedBecause.startsWith("no XP") || step.stoppedBecause.startsWith("hit the")) {
@@ -49,7 +48,7 @@ object Report {
                             formatXp(xpPerHour(use.xp, use.elapsedMs)),
                             "${use.levelFrom} → ${use.levelTo}",
                             formatDuration(use.elapsedMs),
-                        )
+                        ),
                     )
                 }
             }
@@ -64,7 +63,7 @@ object Report {
                 formatXp(xpPerHour(result.totalXp, result.totalMs)),
                 "",
                 formatDuration(result.totalMs),
-            )
+            ),
         )
         println()
         println("   levels reached:")
@@ -94,7 +93,7 @@ object Report {
                     formatXp(r.totalXp),
                     formatXp(xpPerHour(r.totalXp, r.totalMs)),
                     formatDuration(r.totalMs),
-                )
+                ),
             )
         }
         println()
@@ -114,15 +113,18 @@ object Report {
      * Actions/min suffix for an activity row, e.g. " 5/min" or " 5-6/min" when a
      * tool upgrade landed partway. Blank when the skill has no tool.
      */
-    private fun actionRate(use: PlanRunner.ActivityUse): String = when {
-        use.actionsMax <= 0              -> ""
-        use.actionsMin == use.actionsMax -> " ${use.actionsMax}/min"
-        else                             -> " ${use.actionsMin}-${use.actionsMax}/min"
-    }
+    private fun actionRate(use: PlanRunner.ActivityUse): String =
+        when {
+            use.actionsMax <= 0 -> ""
+            use.actionsMin == use.actionsMax -> " ${use.actionsMax}/min"
+            else -> " ${use.actionsMin}-${use.actionsMax}/min"
+        }
 
     /** XP per in-game hour; 0 for a step that ran no sessions. */
-    private fun xpPerHour(xp: Long, elapsedMs: Long): Long =
-        if (elapsedMs <= 0L) 0L else (xp * 3_600_000.0 / elapsedMs).toLong()
+    private fun xpPerHour(
+        xp: Long,
+        elapsedMs: Long,
+    ): Long = if (elapsedMs <= 0L) 0L else (xp * 3_600_000.0 / elapsedMs).toLong()
 
     /** In-game wall clock. Minutes stay visible at every scale: plans separated by
      *  under an hour are exactly the comparisons this tool exists to make. */
@@ -132,17 +134,21 @@ object Report {
         val hours = (minutes % 1440) / 60
         val mins = minutes % 60
         return when {
-            days > 0  -> "${days}d ${hours}h ${mins}m"
+            days > 0 -> "${days}d ${hours}h ${mins}m"
             hours > 0 -> "${hours}h ${mins}m"
-            else      -> "${mins}m"
+            else -> "${mins}m"
         }
     }
 
-    private fun formatXp(xp: Long): String = when {
-        xp >= 1_000_000 -> "%.1fM".format(xp / 1_000_000.0)
-        xp >= 10_000    -> "%.0fk".format(xp / 1_000.0)
-        else            -> xp.toString()
-    }
+    private fun formatXp(xp: Long): String =
+        when {
+            xp >= 1_000_000 -> "%.1fM".format(xp / 1_000_000.0)
+            xp >= 10_000 -> "%.0fk".format(xp / 1_000.0)
+            else -> xp.toString()
+        }
 
-    private fun max(a: Int, b: Int) = if (a > b) a else b
+    private fun max(
+        a: Int,
+        b: Int,
+    ) = if (a > b) a else b
 }

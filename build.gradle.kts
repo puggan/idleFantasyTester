@@ -34,26 +34,28 @@ kotlin {
  *
  * Keep [gameSources] minimal: every file added here has to stay Android-free.
  */
-val gameSources = listOf(
-    "com/fantasyidler/simulator/SkillSimulator.kt",
-    "com/fantasyidler/simulator/XpTable.kt",
-    // PrestigeBoosts carries the node math (sum over paths of the max owned tier);
-    // reusing it beats reimplementing a rule the game may retune.
-    "com/fantasyidler/simulator/PrestigeBoosts.kt",
-    "com/fantasyidler/data/json/GatheringData.kt",
-    "com/fantasyidler/data/json/PrestigeData.kt",
-    "com/fantasyidler/data/model/SessionFrame.kt",
-)
+val gameSources =
+    listOf(
+        "com/fantasyidler/simulator/SkillSimulator.kt",
+        "com/fantasyidler/simulator/XpTable.kt",
+        // PrestigeBoosts carries the node math (sum over paths of the max owned tier);
+        // reusing it beats reimplementing a rule the game may retune.
+        "com/fantasyidler/simulator/PrestigeBoosts.kt",
+        "com/fantasyidler/data/json/GatheringData.kt",
+        "com/fantasyidler/data/json/PrestigeData.kt",
+        "com/fantasyidler/data/model/SessionFrame.kt",
+    )
 
 sourceSets.main {
     kotlin.srcDir("game/app/src/main/kotlin")
     // Include filters apply to every srcDir, so our own sources need patterns too.
     // The second is a shim standing in for a game class we can't compile (see the file).
     kotlin.setIncludes(
-        gameSources + listOf(
-            "com/puggan/idlefantasytester/**",
-            "com/fantasyidler/data/model/PlayerFlags.kt",
-        )
+        gameSources +
+            listOf(
+                "com/puggan/idlefantasytester/**",
+                "com/fantasyidler/data/model/PlayerFlags.kt",
+            ),
     )
 }
 

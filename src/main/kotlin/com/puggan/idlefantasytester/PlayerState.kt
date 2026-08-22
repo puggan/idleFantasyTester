@@ -10,7 +10,6 @@ import com.fantasyidler.simulator.XpTable
  * depends on how much agility was trained before it.
  */
 class PlayerState(startXp: Map<String, Long> = emptyMap()) {
-
     private val xpBySkill: MutableMap<String, Long> = startXp.toMutableMap()
 
     /** Every skill this character has XP in, in the order it was first trained. */
@@ -20,7 +19,10 @@ class PlayerState(startXp: Map<String, Long> = emptyMap()) {
 
     fun levelOf(skill: String): Int = XpTable.levelForXp(xpOf(skill))
 
-    fun addXp(skill: String, amount: Long) {
+    fun addXp(
+        skill: String,
+        amount: Long,
+    ) {
         xpBySkill[skill] = xpOf(skill) + amount
     }
 
@@ -33,8 +35,9 @@ class PlayerState(startXp: Map<String, Long> = emptyMap()) {
          * Explicit XP wins where both name the same skill, since it is the finer grain.
          */
         fun from(plan: Plan): PlayerState {
-            val xp = plan.startLevels.mapValues { (_, level) -> XpTable.xpForLevel(level) }
-                .toMutableMap()
+            val xp =
+                plan.startLevels.mapValues { (_, level) -> XpTable.xpForLevel(level) }
+                    .toMutableMap()
             xp.putAll(plan.startXp)
             // Every skill the plan touches should exist at level 1 even if untrained,
             // so reports list it rather than silently omitting it.

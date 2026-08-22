@@ -23,16 +23,17 @@ fun main(args: Array<String>) {
         }
     }
 
-    val results = args.map { path ->
-        val file = File(path)
-        try {
-            PlanRunner.run(Plan.load(file))
-        } catch (e: Exception) {
-            // Plan files are hand-written; a stack trace helps nobody fix a typo.
-            System.err.println("error in ${file.path}: ${e.message}")
-            exitProcess(1)
+    val results =
+        args.map { path ->
+            val file = File(path)
+            try {
+                PlanRunner.run(Plan.load(file))
+            } catch (e: Exception) {
+                // Plan files are hand-written; a stack trace helps nobody fix a typo.
+                System.err.println("error in ${file.path}: ${e.message}")
+                exitProcess(1)
+            }
         }
-    }
 
     results.forEach { Report.printPlan(it) }
     if (results.size > 1) Report.printComparison(results)
@@ -63,6 +64,6 @@ private fun printHelp() {
         Running more than one plan adds a side-by-side comparison at the end.
 
         Skills implemented: ${SkillRunner.available().joinToString(", ")}
-        """.trimIndent()
+        """.trimIndent(),
     )
 }
