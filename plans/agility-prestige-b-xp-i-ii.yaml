@@ -6,6 +6,13 @@ seed: 42
 loadout:
   pets: [graceling_sprite]
   capes: [agility_cape]
+  tools:                    # all six standard hooks; best usable is equipped per course
+    - bronze_grappling_hook       # req  1, 1.00x
+    - iron_grappling_hook         # req 15, 1.25x
+    - steel_grappling_hook        # req 30, 1.50x
+    - mithril_grappling_hook      # req 55, 1.75x
+    - adamantite_grappling_hook   # req 70, 2.00x
+    - runite_grappling_hook       # req 85, 2.25x
   blessing: divine_grace
   prestige:
     agility:

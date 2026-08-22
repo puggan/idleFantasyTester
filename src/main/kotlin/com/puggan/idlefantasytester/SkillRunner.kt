@@ -36,6 +36,8 @@ interface SkillRunner {
         val durationMs: Long,
         val frames: List<SessionFrame>,
         val items: Map<String, Int> = emptyMap(),
+        /** Actions per minute the tool bought, 0 when the skill has no tool. */
+        val actionsPerMinute: Int = 0,
     ) {
         val totalXp: Long get() = xpBySkill.values.sum()
     }

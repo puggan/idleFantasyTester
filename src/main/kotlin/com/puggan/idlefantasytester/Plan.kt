@@ -40,8 +40,8 @@ data class Plan(
         val untilLevel: Int? = null,
         /** Run exactly this many sessions (or fewer, if [untilLevel] hits first). */
         val sessions: Int? = null,
-        /** Tool multiplier: 1.0 = base, 1.5 = +50% actions/min. */
-        val toolEfficiency: Float = 1.0f,
+        /** Overrides the tool picked from the loadout; null = equip the best owned. */
+        val toolEfficiency: Float? = null,
         /** Overrides the loadout's pet boost for this step; null = use the loadout. */
         val petBoostPct: Int? = null,
         /** Overrides the loadout's Endurance floor reduction; null = use the loadout. */

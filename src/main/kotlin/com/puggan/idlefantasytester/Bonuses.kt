@@ -53,6 +53,18 @@ class Bonuses(private val loadout: Loadout, private val skill: String) {
         1.0 + bonus * scaling
     }
 
+    /**
+     * Best owned tool for [level] on an activity requiring [activityLevelRequired],
+     * or null when none is owned or usable.
+     *
+     * Note the agility call site in QueuedSessionStarter does *not* multiply this by
+     * the prestige tool_eff_pct nodes, unlike mining/woodcutting/fishing — and the
+     * agility tree has no such nodes anyway.
+     */
+    fun bestTool(level: Int, activityLevelRequired: Int): Pair<String, Float>? =
+        if (loadout.tools.isEmpty()) null
+        else GameData.bestAgilityTool(loadout.tools, level, activityLevelRequired)
+
     /** Blessing XP multiplier, or 1.0 with no blessing. No prayer cape modelled yet. */
     val blessingMultiplier: Double =
         loadout.blessing?.let { GameData.blessingXpMultiplier(it) } ?: 1.0
@@ -87,6 +99,7 @@ class Bonuses(private val loadout: Loadout, private val skill: String) {
     /** One-line summary for the report header. */
     fun describe(): List<String> = buildList {
         if (petBoostPct > 0) add("pets ${loadout.pets.joinToString("+")} +$petBoostPct%")
+        if (loadout.tools.isNotEmpty()) add("${loadout.tools.size} tools (best equipped per course)")
         if (capeMultiplier > 1.0) add("cape x${"%.2f".format(capeMultiplier)}")
         loadout.blessing?.let {
             val renewal = if (loadout.blessingRenewed) "renewed" else "24h only"

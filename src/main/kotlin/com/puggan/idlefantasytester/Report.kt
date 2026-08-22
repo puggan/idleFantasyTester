@@ -20,7 +20,7 @@ object Report {
         result.steps.forEach { step ->
             println(
                 ROW.format(
-                    step.step.label.take(28),
+                    step.step.label.take(LABEL),
                     step.sessionsRun.toString(),
                     formatXp(step.xpGained),
                     formatXp(xpPerHour(step.xpGained, step.elapsedMs)),
@@ -36,12 +36,14 @@ object Report {
             if (step.step.prestige != null) {
                 println("       respec: ${step.bonuses.describe().joinToString(", ")}")
             }
-            // A "best" step walks up several activities; break down where its time went.
-            if (step.activities.size > 1) {
+            // A "best" step always breaks down, even when it resolved to a single
+            // activity: which course it settled on is the thing being asked about.
+            // A fixed-activity step with one entry would just repeat its own row.
+            if (step.activities.size > 1 || (step.step.activity == Plan.BEST && step.activities.isNotEmpty())) {
                 step.activities.forEach { use ->
                     println(
                         SUB_ROW.format(
-                            use.activity,
+                            use.activity + actionRate(use),
                             use.sessions.toString(),
                             formatXp(use.xp),
                             formatXp(xpPerHour(use.xp, use.elapsedMs)),
@@ -98,12 +100,25 @@ object Report {
         println()
     }
 
-    private const val ROW = "   %-28s %8s %11s %9s %10s %12s"
+    /**
+     * Label widths differ by the 4 characters the sub-row's indent and arrow add,
+     * so both tables' numeric columns land on the same screen positions.
+     */
+    private const val LABEL = 32
+    private const val ROW = "   %-${LABEL}s %8s %11s %9s %10s %12s"
+    private const val SUB_ROW = "     ↳ %-${LABEL - 4}s %8s %11s %9s %10s %12s"
 
-    /** Indented one notch, so activity rows read as children of their step. */
-    private const val SUB_ROW = "     ↳ %-24s %8s %11s %9s %10s %12s"
+    private const val RULE = 86
 
-    private const val RULE = 82
+    /**
+     * Actions/min suffix for an activity row, e.g. " 5/min" or " 5-6/min" when a
+     * tool upgrade landed partway. Blank when the skill has no tool.
+     */
+    private fun actionRate(use: PlanRunner.ActivityUse): String = when {
+        use.actionsMax <= 0              -> ""
+        use.actionsMin == use.actionsMax -> " ${use.actionsMax}/min"
+        else                             -> " ${use.actionsMin}-${use.actionsMax}/min"
+    }
 
     /** XP per in-game hour; 0 for a step that ran no sessions. */
     private fun xpPerHour(xp: Long, elapsedMs: Long): Long =

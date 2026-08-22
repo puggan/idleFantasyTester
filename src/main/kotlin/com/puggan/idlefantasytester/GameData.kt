@@ -50,19 +50,22 @@ object GameData {
             .associateBy { it.skill }
     }
 
-    private val equipment: Map<String, CapeEntry> by lazy {
-        json.decodeFromString<Map<String, CapeEntry>>(asset("equipment.json"))
+    private val equipment: Map<String, EquipmentEntry> by lazy {
+        json.decodeFromString<Map<String, EquipmentEntry>>(asset("equipment.json"))
     }
 
     private val pets: Map<String, PetEntry> by lazy {
         json.decodeFromString<Map<String, PetEntry>>(asset("pets.json"))
     }
 
-    /** The handful of equipment fields the cape math needs. */
+    /** The handful of equipment fields the cape and tool math need. */
     @Serializable
-    private data class CapeEntry(
-        @SerialName("cape_skill") val capeSkill: String? = null,
-        @SerialName("cape_bonus") val capeBonus: Double = 0.0,
+    private data class EquipmentEntry(
+        val slot: String = "",
+        @SerialName("cape_skill")        val capeSkill: String? = null,
+        @SerialName("cape_bonus")        val capeBonus: Double = 0.0,
+        @SerialName("agility_efficiency") val agilityEfficiency: Float? = null,
+        val requirements: Map<String, Int> = emptyMap(),
     )
 
     @Serializable
@@ -110,6 +113,52 @@ object GameData {
         }
         return bestSkill + bestGuild
     }
+
+    // ------------------------------------------------------------------
+    // Tools
+    // ------------------------------------------------------------------
+
+    /**
+     * Tool tier boundaries, from the game's util/ToolEfficiency.kt.
+     *
+     * That file is an extension on GameDataRepository, which is a Hilt/Room type
+     * we cannot compile here, so this rule is restated rather than reused. If the
+     * game retunes tiers or the per-tier bonus, this needs updating with it.
+     */
+    private val TOOL_TIERS = listOf(1, 15, 30, 55, 70, 85)
+
+    private fun tierIndex(level: Int): Int =
+        TOOL_TIERS.indexOfLast { it <= level }.coerceAtLeast(0)
+
+    /**
+     * Efficiency of [toolKey] used on an activity requiring [activityLevelRequired].
+     *
+     * A tool outranking the activity gets +25% per tier of difference, so the same
+     * hook is worth more on courses well below it.
+     */
+    fun agilityToolEfficiency(toolKey: String, activityLevelRequired: Int): Float {
+        val tool = equipment[toolKey] ?: error("Unknown tool '$toolKey'")
+        val base = tool.agilityEfficiency ?: 1.0f
+        if (activityLevelRequired <= 0) return base
+        val toolReqLevel = tool.requirements[AGILITY] ?: 1
+        val tierDiff = tierIndex(toolReqLevel) - tierIndex(activityLevelRequired)
+        return if (tierDiff > 0) base * (1.0f + 0.25f * tierDiff) else base
+    }
+
+    /**
+     * Best owned hook for [agilityLevel] on a course requiring [activityLevelRequired].
+     *
+     * Picked by resulting efficiency rather than by tier, because the tierDiff bonus
+     * can make a lower-requirement tool win: the shadow hook (req 40, base 2.5)
+     * beats runite (req 85, base 2.25) on any course both can work.
+     */
+    fun bestAgilityTool(owned: List<String>, agilityLevel: Int, activityLevelRequired: Int): Pair<String, Float>? =
+        owned.filter { key ->
+            val tool = equipment[key] ?: error("Unknown tool '$key'")
+            require(tool.slot == "grappling_hook") { "'$key' is not a grappling hook" }
+            (tool.requirements[AGILITY] ?: 1) <= agilityLevel
+        }.map { it to agilityToolEfficiency(it, activityLevelRequired) }
+            .maxByOrNull { it.second }
 
     /** XP multiplier of a church blessing, e.g. 1.37 for divine_grace. */
     fun blessingXpMultiplier(key: String): Double {

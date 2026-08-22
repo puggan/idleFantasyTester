@@ -38,6 +38,9 @@ object PlanRunner {
         val elapsedMs: Long,
         val levelFrom: Int,
         val levelTo: Int,
+        /** Actions/min range over the slice; widens when a tool upgrade lands mid-course. */
+        val actionsMin: Int = 0,
+        val actionsMax: Int = 0,
     )
 
     data class Result(
@@ -110,13 +113,24 @@ object PlanRunner {
                 val levelNow = state.levelOf(step.skill)
                 activities.merge(
                     session.activity,
-                    ActivityUse(session.activity, 1, awardedTotal, session.durationMs, level, levelNow),
+                    ActivityUse(
+                        activity   = session.activity,
+                        sessions   = 1,
+                        xp         = awardedTotal,
+                        elapsedMs  = session.durationMs,
+                        levelFrom  = level,
+                        levelTo    = levelNow,
+                        actionsMin = session.actionsPerMinute,
+                        actionsMax = session.actionsPerMinute,
+                    ),
                 ) { old, new ->
                     old.copy(
-                        sessions  = old.sessions + new.sessions,
-                        xp        = old.xp + new.xp,
-                        elapsedMs = old.elapsedMs + new.elapsedMs,
-                        levelTo   = new.levelTo,
+                        sessions   = old.sessions + new.sessions,
+                        xp         = old.xp + new.xp,
+                        elapsedMs  = old.elapsedMs + new.elapsedMs,
+                        levelTo    = new.levelTo,
+                        actionsMin = minOf(old.actionsMin, new.actionsMin),
+                        actionsMax = maxOf(old.actionsMax, new.actionsMax),
                     )
                 }
                 elapsedMs += session.durationMs

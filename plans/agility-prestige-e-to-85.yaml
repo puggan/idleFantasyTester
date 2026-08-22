@@ -1,10 +1,13 @@
-name: agility prestige C - XP Bonus I & Endurance I
+name: agility prestige E - XP I + Endurance I, stop at 85
 seed: 42
 
-# 3 points, split across both paths. Endurance is the interesting half: it does
-# not touch XP at all, it shortens sessions, so it trades a smaller XP bonus for
-# more sessions per day. Whether that wins depends on how much of the run is
-# spent near level 99, where the duration floor actually bites.
+# Plan C's allocation, stopped at the level where Endurance I brings sessions
+# back to 40 minutes -- the length they are at 99 with no prestige at all.
+#
+# That makes this the "underwater" stretch: from prestiging until level 85 every
+# session in every skill is longer than it was before prestiging, because
+# session duration keys off agility level. Past 85 the character is ahead of
+# where it started, ending at 36:30 sessions at 99.
 loadout:
   pets: [graceling_sprite]
   capes: [agility_cape]
@@ -24,4 +27,4 @@ loadout:
 steps:
   - skill: agility
     course: best
-    untilLevel: 99
+    untilLevel: 85

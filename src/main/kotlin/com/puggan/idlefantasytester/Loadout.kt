@@ -14,6 +14,12 @@ data class Loadout(
     val pets: List<String> = emptyList(),
     /** Cape item keys held or worn, e.g. ["agility_cape"]. Skill and guild capes stack. */
     val capes: List<String> = emptyList(),
+    /**
+     * Tool keys owned, e.g. the six grappling hooks. The best one usable at the
+     * current level is picked per session, since which tool wins depends on the
+     * course being run.
+     */
+    val tools: List<String> = emptyList(),
     /** Church blessing key, e.g. "divine_grace" (x1.37 XP). */
     val blessing: String? = null,
     /**
