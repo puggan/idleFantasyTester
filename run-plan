@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Runs plan files through the simulator. See ./run-plan --help
+#
+# Rebuilds only when sources changed, then runs the installed distribution —
+# Gradle's own output would otherwise bury the report.
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+BIN=build/install/idleFantasyTester/bin/idleFantasyTester
+
+# Gradle 8.7 cannot run on JDK 26; gradle.properties points the daemon at 21,
+# but the launcher needs a supported JVM too.
+if [ -z "${JAVA_HOME:-}" ] && [ -d /usr/lib/jvm/java-21-openjdk-amd64 ]; then
+    export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+fi
+
+newest_source=$(find src build.gradle.kts gradle.properties -newer "$BIN" -print -quit 2>/dev/null || true)
+if [ ! -x "$BIN" ] || [ -n "$newest_source" ]; then
+    ./gradlew --quiet installDist
+fi
+
+exec "$BIN" "$@"
