@@ -25,7 +25,6 @@ steps:
   - skill: agility
     course: best
     untilLevel: 99
-    note: respec at 90, Endurance to 99
     prestige:
       agility:
         - agility_xp_1        # +5% xp         (cost 1)

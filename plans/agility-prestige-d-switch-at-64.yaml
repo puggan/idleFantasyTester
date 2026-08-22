@@ -1,0 +1,38 @@
+name: agility prestige D - XP I+II to 64, then respec to XP I + Endurance I
+seed: 42
+
+# XP II and Endurance I are worth the same at the level where Endurance's time
+# saving cancels the extra 5% XP:
+#
+#   3.5*(L-1)/98 = 0.05 * (60 - 23.5*(L-1)/98)   ->   L ~= 64
+#
+# Below that the XP bonus wins, above it Endurance does, so this takes the XP
+# bonus to 64 and respecs. An earlier version of this plan switched at 90 and
+# lost to plain Endurance: the floor reduction scales with level and is already
+# ahead through the 70s and 80s, so waiting gave away the levels it wins.
+#
+# The game supports the switch: respecPrestige wipes a skill's nodes and refunds
+# the points, on a 24h per-skill cooldown. One switch does not run into that.
+loadout:
+  pets: [graceling_sprite]
+  capes: [agility_cape]
+  blessing: divine_grace
+  prestige:
+    agility:
+      - agility_xp_1        # +5%  (cost 1)
+      - agility_xp_2        # +10% (cost 1)
+
+steps:
+  - skill: agility
+    course: best
+    untilLevel: 64
+    note: XP Boost I+II to 64
+
+  - skill: agility
+    course: best
+    untilLevel: 99
+    note: respec at 64, Endurance to 99
+    prestige:
+      agility:
+        - agility_xp_1        # +5% xp         (cost 1)
+        - agility_endurance_1 # -3.5 min floor (cost 2)
