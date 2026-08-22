@@ -1,0 +1,9 @@
+name: agility 1-99, always the best course
+seed: 42
+
+steps:
+  # "best" re-checks every session, so this hops up the course list on its own
+  # as levels unlock. The baseline every other agility plan is measured against.
+  - skill: agility
+    course: best
+    untilLevel: 99

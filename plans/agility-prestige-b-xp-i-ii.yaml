@@ -1,0 +1,18 @@
+name: agility prestige B - XP Boost I & II
+seed: 42
+
+# 2 points into the xp path. Node values are totals per tier, not increments,
+# and the engine takes the MAX owned tier within a path — so I+II is +10%, not +15%.
+loadout:
+  pets: [graceling_sprite]
+  capes: [agility_cape]
+  blessing: divine_grace
+  prestige:
+    agility:
+      - agility_xp_1        # +5%  (cost 1)
+      - agility_xp_2        # +10% (cost 1)
+
+steps:
+  - skill: agility
+    course: best
+    untilLevel: 99

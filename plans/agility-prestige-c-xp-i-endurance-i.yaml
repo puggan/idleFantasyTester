@@ -1,0 +1,20 @@
+name: agility prestige C - XP Bonus I & Endurance I
+seed: 42
+
+# 3 points, split across both paths. Endurance is the interesting half: it does
+# not touch XP at all, it shortens sessions, so it trades a smaller XP bonus for
+# more sessions per day. Whether that wins depends on how much of the run is
+# spent near level 99, where the duration floor actually bites.
+loadout:
+  pets: [graceling_sprite]
+  capes: [agility_cape]
+  blessing: divine_grace
+  prestige:
+    agility:
+      - agility_xp_1          # +5% xp             (cost 1)
+      - agility_endurance_1   # -3.5 min floor     (cost 2)
+
+steps:
+  - skill: agility
+    course: best
+    untilLevel: 99

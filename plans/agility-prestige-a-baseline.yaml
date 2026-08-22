@@ -1,0 +1,17 @@
+name: agility prestige A - no points spent
+seed: 42
+
+# Post-prestige run back to 99, carrying what a first 99 leaves you with:
+# the pet, the cape, and a Divine Grace blessing. No prestige points spent,
+# so this is the yardstick plans B and C are measured against.
+loadout:
+  pets: [graceling_sprite]  # +10% xp, applied inside the session sim
+  capes: [agility_cape]     # +10% xp at collect
+  blessing: divine_grace    # x1.37 xp at collect (prayer 80)
+  prestige:
+    agility: []
+
+steps:
+  - skill: agility
+    course: best
+    untilLevel: 99
