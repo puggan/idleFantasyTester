@@ -1,7 +1,26 @@
 plugins {
     kotlin("jvm") version "2.0.0"
     kotlin("plugin.serialization") version "2.0.0"
+    id("com.diffplug.spotless") version "6.25.0"
     application
+}
+
+/**
+ * Formatting is ktlint's official style, driven from .editorconfig.
+ *
+ * The targets below deliberately name only our own sources. The game submodule is
+ * read-only: its files are compiled into this project but must never be rewritten,
+ * or the next tag bump turns into a merge conflict against our own formatter.
+ */
+spotless {
+    kotlin {
+        target("src/**/*.kt")
+        ktlint("1.0.1")
+    }
+    kotlinGradle {
+        target("*.gradle.kts")
+        ktlint("1.0.1")
+    }
 }
 
 kotlin {

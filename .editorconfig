@@ -1,0 +1,26 @@
+# Kotlin official style, enforced by ktlint via Spotless (see build.gradle.kts).
+# Applies to this project only — game/ is a read-only submodule.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 120
+ktlint_code_style = ktlint_official
+
+# Trailing commas, for the reason the Kotlin conventions give: adding an argument
+# touches one line instead of two, so diffs stay honest about what changed.
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+[*.{yaml,yml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
